@@ -63,13 +63,13 @@
 		<dependency>
 			<groupId>com.github.mp911de.microbenchmark-runner</groupId>
 			<artifactId>microbenchmark-runner-junit5</artifactId>
-			<version>0.3.0.RELEASE</version>
+			<version>0.4.0.BUILD-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.github.mp911de.microbenchmark-runner</groupId>
 			<artifactId>microbenchmark-runner-extras</artifactId>
-			<version>0.3.0.RELEASE</version>
+			<version>0.4.0.BUILD-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

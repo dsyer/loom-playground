@@ -15,12 +15,17 @@
  */
 package benchmarks;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import org.junit.platform.commons.annotation.Testable;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -54,7 +59,7 @@ public class ThreadPoolExecutorBenchmark {
 	@Setup
 	public void setUp() {
 		executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-				Runtime.getRuntime().availableProcessors(), 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(100));
+				Runtime.getRuntime().availableProcessors(), 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(10000));
 	}
 
 	@TearDown
@@ -67,6 +72,39 @@ public class ThreadPoolExecutorBenchmark {
 	public void runAndAwait(Blackhole sink) throws ExecutionException, InterruptedException {
 		sink.consume(executor.submit(() -> {
 		}).get());
+	}
+
+	@Benchmark
+	@Testable
+	public void readFiles(Blackhole sink) throws ExecutionException, InterruptedException {
+		ExecutorCompletionService<Boolean> service = new ExecutorCompletionService<>(executor);
+		AtomicInteger count = new AtomicInteger();
+		try (Stream<Path> files = Files.walk(Path.of("target"))) {
+			files.filter(file -> !Files.isDirectory(file)).forEach(path -> {
+				try {
+					service.submit(() -> {
+						try {
+							sink.consume(Files.readAllBytes(path));
+						}
+						catch (IOException e) {
+							// ignore
+						}
+					}, true);
+					count.incrementAndGet();
+				}
+				catch (Exception e) {
+					// ignore
+					e.printStackTrace();
+				}
+			});
+		}
+		catch (Exception e) {
+			// ignore
+			e.printStackTrace();
+		}
+		for (int i = 0; i < count.get(); i++) {
+			service.take();
+		}
 	}
 
 }
